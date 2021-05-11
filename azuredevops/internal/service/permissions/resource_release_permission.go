@@ -36,6 +36,8 @@ func ResourceReleasePermissionsCreateOrUpdate(d *schema.ResourceData, m interfac
 	}
 
 	if err := securityhelper.SetPrincipalPermissions(d, sn, nil, false); err != nil {
+		log.Printf("PASSANDO!!!")
+		log.Fatal(err)
 		return err
 	}
 
@@ -84,6 +86,6 @@ func createReleaseToken(d *schema.ResourceData, clients *client.AggregatedClient
 	if !ok {
 		return "", fmt.Errorf("Failed to get 'project_id' from schema")
 	}
-	aclToken := fmt.Sprintf("$PROJECT:vstfs:///Classification/TeamProject/%s", projectID.(string))
+	aclToken := projectID.(string)
 	return aclToken, nil
 }
