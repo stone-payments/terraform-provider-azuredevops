@@ -29,6 +29,3 @@ dist
 .idea
 
 .DS_Store
-
-#Personal 
-examples/azureDevOpsLocally/*
