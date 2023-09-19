@@ -1,0 +1,17 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+    name: terraform-provider-azuredevops
+    title: Terraform Azure DevOps provider 
+    description: Terraform Provider to manage Azure DevOps (Devops Resource Manager)
+    namespace: stone
+    tags:
+      - iac-library
+      - terraform
+      - terraform-provider
+    annotations:
+      legacy.stone.tech/owner-email: foundation.platform@stone.com.br
+spec:
+    type: library
+    lifecycle: production
+    owner: stone-payments/foundation-platform-experience
