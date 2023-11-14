@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -32,13 +33,12 @@ func ResourceGroup() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"scope": {
-				Type:         schema.TypeString,
-				ValidateFunc: validation.NoZeroValues,
-				Optional:     true,
-				ForceNew:     true,
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return true
-				},
+				Type:          schema.TypeString,
+				ValidateFunc:  validation.NoZeroValues,
+				Optional:      true,
+				ForceNew:      true,
+				Computed:      true,
+				ConflictsWith: []string{"mail", "origin_id"},
 			},
 
 			// ***
@@ -180,7 +180,10 @@ func resourceGroupCreate(d *schema.ResourceData, m interface{}) error {
 	// using: POST https://vssps.dev.azure.com/{organization}/_apis/graph/groups?api-version=5.1-preview.1
 	cga := azDOGraphCreateGroupArgs{}
 	val, b := d.GetOk("scope")
+	log.Println("[DEBUG] !!!!!!!!!!!!!!!!WORKS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+	log.Print(b)
 	if b {
+		log.Printf("[INFO] O IF FOI ACESSADA!")
 		uuid, _ := uuid.Parse(val.(string))
 		desc, err := clients.GraphClient.GetDescriptor(clients.Ctx, graph.GetDescriptorArgs{
 			StorageKey: &uuid,
@@ -188,6 +191,7 @@ func resourceGroupCreate(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			return err
 		}
+		log.Print(desc.Value)
 		cga.ScopeDescriptor = desc.Value
 	}
 	val, b = d.GetOk("origin_id")

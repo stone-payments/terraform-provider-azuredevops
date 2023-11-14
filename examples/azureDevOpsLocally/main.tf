@@ -8,12 +8,10 @@ terraform {
   }
 }
 
-/*
 provider "azuredevops" {
   org_service_url       = var.org_url
   personal_access_token = var.org_token
 }
-*/
 
 resource "azuredevops_project" "terraform_add_project" {
   name               = var.project_name
@@ -38,70 +36,53 @@ data "azuredevops_group" "tf_padrao_projectadm" {
 
 // Adicionando grupos padrão da Stone
 resource "azuredevops_group" "developers" {
-  scope        = azuredevops_project.terraform_add_project.id
+  scope = azuredevops_project.terraform_add_project.id
   display_name = "Developers"
   description  = "Members of this group can add modify and delete code builds and workitems and view releases within the team project."
-
-  members = [
-    data.azuredevops_group.tf_padrao_projectadm.descriptor
-  ]
 }
 
 resource "azuredevops_group" "infrastructureengineers" {
   scope        = azuredevops_project.terraform_add_project.id
-  display_name = "InfrastructureEngineers"
+  display_name = "Infrastructure Engineers"
   description  = "Members of this group can add modify and delete code builds workitems and releases within the team project."
-
-  members = [
-    data.azuredevops_group.tf_padrao_projectadm.descriptor
-  ]
 }
 
 resource "azuredevops_group" "techleads" {
   scope        = azuredevops_project.terraform_add_project.id
-  display_name = "TechLeads"
+  display_name = "Tech Leads"
   description  = "Members of this group can add modify and delete code builds and workitems and view trigger releases within the team project."
-
-  members = [
-    data.azuredevops_group.tf_padrao_projectadm.descriptor
-  ]
 }
 
 resource "azuredevops_group" "databaseadmins" {
   scope        = azuredevops_project.terraform_add_project.id
-  display_name = "DatabaseAdmins"
+  display_name = "Database Admins"
   description  = "Members of this group can add modify and delete code builds workitems and releases within the team project."
-
-  members = [
-    data.azuredevops_group.tf_padrao_projectadm.descriptor
-  ]
 }
 
 resource "azuredevops_group" "externaldevelopers" {
   scope        = azuredevops_project.terraform_add_project.id
-  display_name = "ExternalDevelopers"
+  display_name = "External Developers"
   description  = "Members of this group can add modify and delete code builds and workitems and view releases within the team project."
-
-  members = [
-    data.azuredevops_group.tf_padrao_projectadm.descriptor
-  ]
 }
 
 resource "azuredevops_group" "productmanagers" {
   scope        = azuredevops_project.terraform_add_project.id
-  display_name = "ProductManagers"
+  display_name = "Product Managers"
   description  = "Members of this group can add modify and delete workitems and view code builds and releases within the team project."
+}
 
+resource "azuredevops_group_membership" "membership" {
+  group = data.azuredevops_group.tf_padrao_projectadm.descriptor
   members = [
-    data.azuredevops_group.tf_padrao_projectadm.descriptor
+    azuredevops_group.developers.descriptor,
+    azuredevops_group.infrastructureengineers.descriptor,
+    azuredevops_group.techleads.descriptor,
+    azuredevops_group.databaseadmins.descriptor,
+    azuredevops_group.externaldevelopers.descriptor,
+    azuredevops_group.productmanagers.descriptor
   ]
 }
 
-// Gerenciando as definições de Build
-resource "azuredevops_build_definition" "build" {
-  project_id = azuredevops_project.terraform_add_project.id
-  name       = "Default Build Definition"
-}
 
 // Configurando permissões dos grupos padrões Stone
 resource "azuredevops_project_permissions" "perm-developers" {
@@ -114,23 +95,15 @@ resource "azuredevops_project_permissions" "perm-developers" {
 
 resource "azuredevops_project_permissions" "perm-techleads" {
   project_id = azuredevops_project.terraform_add_project.id
-  principal  = data.azuredevops_group.techleads.id
+  principal  = azuredevops_group.techleads.id
   permissions = {
     WORK_ITEM_PERMANENTLY_DELETE = "Deny"
   }
 }
-/*
-resource "azuredevops_project_permissions" "perm-infrastructureengs" {
-  project_id = azuredevops_project.terraform_add_project.id
-  principal  = data.azuredevops_group.infrastructureengineers.id
-  permissions = {
 
-  }
-}
-*/
 resource "azuredevops_project_permissions" "perm-databaseadmins" {
   project_id = azuredevops_project.terraform_add_project.id
-  principal  = data.azuredevops_group.databaseadmins.id
+  principal  =azuredevops_group.databaseadmins.id
   permissions = {
     WORK_ITEM_PERMANENTLY_DELETE = "Deny"
   }
@@ -138,7 +111,7 @@ resource "azuredevops_project_permissions" "perm-databaseadmins" {
 
 resource "azuredevops_project_permissions" "perm-extdevelopers" {
   project_id = azuredevops_project.terraform_add_project.id
-  principal  = data.azuredevops_group.externaldevelopers.id
+  principal  =azuredevops_group.externaldevelopers.id
   permissions = {
     WORK_ITEM_PERMANENTLY_DELETE = "Deny"
   }
@@ -146,9 +119,89 @@ resource "azuredevops_project_permissions" "perm-extdevelopers" {
 
 resource "azuredevops_project_permissions" "perm-productmanagers" {
   project_id = azuredevops_project.terraform_add_project.id
-  principal  = data.azuredevops_group.productmanagers.id
+  principal  =azuredevops_group.productmanagers.id
   permissions = {
     WORK_ITEM_PERMANENTLY_DELETE = "Deny"
+    START_BUILD                  = "Deny"
+    ADMINISTER_BUILD             = "Deny"
+    EDIT_BUILD_STATUS            = "Deny"
+    UPDATE_BUILD                 = "Deny"
+  }
+}
+
+resource "azuredevops_project_releases_permissions" "perm_releases_developers" {
+  project_id  = azuredevops_project.terraform_add_project.id
+  principal   = azuredevops_group.developers.id
+  permissions = {
+    EditReleaseDefinition        = "deny"
+    DeleteReleaseDefinition      = "deny"
+    ManageReleaseApprovers       = "deny"
+    ManageReleases               = "deny"
+    CreateReleases               = "deny"
+    EditReleaseEnvironment       = "deny"
+    DeleteReleaseEnvironment     = "deny"
+    AdministerReleasePermissions = "deny"
+    DeleteReleases               = "deny"
+    ManageDeployments            = "deny"
+    ManageReleaseSettings        = "deny"
+    ManageTaskHubExtension       = "deny"
+  }
+}
+
+resource "azuredevops_project_releases_permissions" "perm_releases_techleads" {
+  project_id  = azuredevops_project.terraform_add_project.id
+  principal   = azuredevops_group.techleads.id
+  permissions = {
+    EditReleaseDefinition        = "deny"
+    DeleteReleaseDefinition      = "deny"
+    ManageReleaseApprovers       = "deny"
+    ManageReleases               = "deny"
+    CreateReleases               = "deny"
+    EditReleaseEnvironment       = "deny"
+    DeleteReleaseEnvironment     = "deny"
+    AdministerReleasePermissions = "deny"
+    DeleteReleases               = "deny"
+    ManageDeployments            = "deny"
+    ManageReleaseSettings        = "deny"
+    ManageTaskHubExtension       = "deny"
+  }
+}
+
+resource "azuredevops_project_releases_permissions" "perm_releases_extdevelopers" {
+  project_id  = azuredevops_project.terraform_add_project.id
+  principal   = azuredevops_group.externaldevelopers.id
+  permissions = {
+    EditReleaseDefinition        = "deny"
+    DeleteReleaseDefinition      = "deny"
+    ManageReleaseApprovers       = "deny"
+    ManageReleases               = "deny"
+    CreateReleases               = "deny"
+    EditReleaseEnvironment       = "deny"
+    DeleteReleaseEnvironment     = "deny"
+    AdministerReleasePermissions = "deny"
+    DeleteReleases               = "deny"
+    ManageDeployments            = "deny"
+    ManageReleaseSettings        = "deny"
+    ManageTaskHubExtension       = "deny"
+  }
+}
+
+resource "azuredevops_project_releases_permissions" "perm_releases_productmanagers" {
+  project_id  = azuredevops_project.terraform_add_project.id
+  principal   = azuredevops_group.productmanagers.id
+  permissions = {
+    EditReleaseDefinition        = "deny"
+    DeleteReleaseDefinition      = "deny"
+    ManageReleaseApprovers       = "deny"
+    ManageReleases               = "deny"
+    CreateReleases               = "deny"
+    EditReleaseEnvironment       = "deny"
+    DeleteReleaseEnvironment     = "deny"
+    AdministerReleasePermissions = "deny"
+    DeleteReleases               = "deny"
+    ManageDeployments            = "deny"
+    ManageReleaseSettings        = "deny"
+    ManageTaskHubExtension       = "deny"
   }
 }
 
